@@ -8,5 +8,5 @@ How to run in system,
 After above changes, run node server.js to start application
 
 To get started on browser
--On browser run http://localhost:3200/api/interview after server is run from backend. You can now browser on the buttons present
+-On browser run http://localhost:3200/api/interview after server is run from backend. You can now browse on the buttons present
 -NOTE: Job available page can be views without signin, for viewing other pages, or to download, signin is required. 
