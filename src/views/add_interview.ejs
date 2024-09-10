@@ -1,0 +1,123 @@
+<body>
+    <!-- Error div -->
+    <div class="error"></div>
+
+    <!-- Form for Adding an Interview -->
+    <h2>Add Interview</h2>
+    <form id="add-interview-form" action="/api/interview/add" method="POST">
+        <div>
+            <label for="company">Company:</label>
+            <input type="text" id="company" name="company" required>
+        </div>
+        <div>
+            <label for="location">Location:</label>
+            <input type="text" id="location" name="location" required>
+        </div>
+        <div>
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        <div>
+            <button type="submit">Add Interview</button>
+        </div>
+    </form>
+    <div>
+        <button type="button" id="go-back-button">Go Back</button>
+    </div>
+</body>
+
+<script>
+    async function handleGetRequest(url) {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        document.open();
+                        document.write(html);
+                        document.close();
+
+                        // Change the URL to the provided URL
+                        history.pushState(null, null, url);
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // If the response is JSON, handle it accordingly
+                        const data = await response.json();
+                        console.log('JSON Response:', data);
+                        // Handle JSON response if needed
+                    }
+                } else {
+                    console.error('Failed to fetch the page:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    document.getElementById('add-interview-form').onsubmit = async function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const formData = new FormData(this);
+
+                const company=formData.get('company')
+                const location=formData.get('location')
+                const date=formData.get('date')
+
+                const response = await fetch('/api/interview/add', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token, // Pass the token in the Authorization header
+                        'Content-Type': 'application/json' // Set the content type to JSON
+                    },
+                    body: JSON.stringify({company,location,date})
+                });
+
+                const data = await response.json();
+                console.log(data);
+                if (data.message === 'success') {
+                    // If the student is added successfully, reload the students list
+                    const url=`/api/interview/`;
+                    await handleGetRequest(url)
+                } else {
+                    // If there's a failure, display the error message
+                    const errorMessagesDiv = document.querySelector('.error');
+                    errorMessagesDiv.innerHTML = ''; // Clear existing error messages
+                    const errorItem = document.createElement('li');
+                    errorItem.textContent = data.error;
+                    errorMessagesDiv.appendChild(errorItem);
+                }
+                
+            } catch (error) {
+                console.error('Error during form submission:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    };
+
+    document.getElementById('go-back-button').onclick = function() {
+        const url=`/api/interview/`;
+        handleGetRequest(url);
+    };
+</script>
+

@@ -1,0 +1,75 @@
+<body>
+    <div class="error">
+        <% if (typeof error !== 'undefined' && error) { %>
+            <%= error %>
+        <% } %>
+    </div>
+
+    <% if (interviews && interviews.length > 0) { %>
+        <ul>
+            <% interviews.forEach(interview => { %>
+                <li>
+                    <div id="interview-<%= interview.interviewID %>">
+                        <p>Company: <%= interview.company %></p>
+                        <p>Location: <%= interview.location %></p>
+                        <p>Date: <%= interview.date %></p>
+                        <p>Status: <%= interview.status %></p>
+                    </div>
+                </li>
+            <% }); %>
+        </ul>
+    <% } else { %>
+        <p>No interviews found.</p>
+    <% } %>
+
+    <div>
+        <button type="button" id="go-back-button">Go Back</button>
+    </div>
+</body>
+
+<script>
+    async function loadStudent() {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch('/api/student', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        document.open();
+                        document.write(html);
+                        document.close();
+
+                        // Change the URL to /api/student
+                        history.pushState(null, null, '/api/student');
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // If the response is JSON, handle it accordingly
+                        const data = await response.json();
+                        // Handle JSON response here, if needed
+                    }
+                } else {
+                    console.error('Failed to fetch students:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    document.getElementById('go-back-button').onclick = function() {
+        loadStudent();
+    };
+</script>

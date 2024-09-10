@@ -1,0 +1,107 @@
+<body>
+    <div id="students-container">
+        <!-- This section will be dynamically populated by JavaScript -->
+        
+        <% students.forEach(student => { %>
+            <div class="student-entry" id="student-<%= student._id %>">
+                <h3>Student Name: <%= student.name %></h3>
+                <p>Batch: <%= student.batch %></p>
+                <p>College: <%= student.Student_details.college %></p>
+                <p>Status: <%= student.Student_details.status %></p>
+                <p>Course Scores:</p>
+                <ul>
+                    <li>DSA: <%= student.Course_Scores.DSA %></li>
+                    <li>Node: <%= student.Course_Scores.Node %></li>
+                    <li>React: <%= student.Course_Scores.React %></li>
+                </ul>
+                <a class="view_interview" href="#" data-id="<%= student._id %>">View Interviews</a>
+                <a class="modify" href="#" data-id="<%= student._id %>">Modify Details</a>
+                <a class="delete" href="#" data-id="<%= student._id %>">Delete Student</a>
+            </div>
+        <% }); %>
+    </div>
+
+    <a href="#" class="add-student-button">Add Student</a>
+</body>
+
+<script>
+    async function handleGetRequest(url) {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        document.open();
+                        document.write(html);
+                        document.close();
+
+                        // Change the URL to the provided URL
+                        history.pushState(null, null, url);
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // If the response is JSON, handle it accordingly
+                        const data = await response.json();
+                        console.log(data);
+                        // Handle the JSON response if necessary
+                    }
+                } else {
+                    console.error('Failed to fetch the page:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    // Event listeners for the various actions
+    document.querySelectorAll('.view_interview').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+            
+            const studentId = this.getAttribute('data-id');
+            const url = `/api/student/view_interview/${studentId}`;
+            handleGetRequest(url);
+        });
+    });
+
+    document.querySelectorAll('.modify').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+            
+            const studentId = this.getAttribute('data-id');
+            const url = `/api/student/modify/${studentId}`;
+            handleGetRequest(url);
+        });
+    });
+
+    document.querySelectorAll('.delete').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+            
+            const studentId = this.getAttribute('data-id');
+            const url = `/api/student/delete/${studentId}`;
+            handleGetRequest(url);
+        });
+    });
+
+    document.querySelector('.add-student-button').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent the default link behavior
+        
+        const url = '/api/student/addStudent';
+        handleGetRequest(url);
+    });
+</script>

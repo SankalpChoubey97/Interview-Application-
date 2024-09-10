@@ -1,0 +1,90 @@
+<div class="confirmation-container">
+    <h2>Are you sure you want to delete this student?</h2>
+    <form id="delete-form" action="/api/student/delete/<%= id %>" method="POST">
+        <button type="submit" id="delete-button">Yes, Delete</button>
+        <button type="button" id="cancel-button">Cancel</button>
+    </form>
+</div>
+
+<script>
+    async function loadStudent() {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch('/api/student', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        document.open();
+                        document.write(html);
+                        document.close();
+
+                        // Change the URL to /api/student
+                        history.pushState(null, null, '/api/student');
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // Handle JSON response here, if needed
+                        const data = await response.json();
+                    }
+                } else {
+                    console.error('Failed to fetch students:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    // Call the loadStudent function when the Cancel button is clicked
+    document.getElementById('cancel-button').onclick = function() {
+        loadStudent();
+    };
+
+    // Handle the delete action
+    document.getElementById('delete-form').onsubmit = async function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch(this.action, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token, // Pass the token in the Authorization header
+                        'Content-Type': 'application/json' // Set the content type to JSON
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.message === 'success') {
+                        // If the student is deleted successfully, reload the students list
+                        await loadStudent();
+                    } else {
+                        console.error('Failed to delete student:', data.error.msg);
+                    }
+                } else {
+                    console.error('Failed to submit the form:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during form submission:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    };
+</script>

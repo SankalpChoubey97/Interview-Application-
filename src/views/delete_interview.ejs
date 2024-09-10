@@ -1,0 +1,89 @@
+<div class="confirmation-container">
+    <h2>Are you sure you want to delete this interview?</h2>
+    <form id="delete-form">
+        <button type="button" id="confirm-delete">Yes, Delete</button>
+        <button type="button" id="cancel-delete">Cancel</button>
+    </form>
+</div>
+
+<script>
+    // Function to handle GET requests, similar to the previous implementation
+    async function handleGetRequest(url) {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        history.pushState(null, null, url);
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // If the response is JSON, handle it accordingly
+                        const data = await response.json();
+                        console.log('JSON Response:', data);
+                    }
+                } else {
+                    console.error('Failed to fetch the page:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    // Handle the "Delete" button click
+    document.getElementById('confirm-delete').addEventListener('click', async function() {
+        const interviewId = '<%= interviewID %>';  // Pass interview ID from EJS
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch(`http://localhost:3200/api/interview/delete/${interviewId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token, // Pass the token in the Authorization header
+                        'Content-Type': 'application/json' // Set the content type to JSON
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.message === 'success') {
+                    // Redirect to the interview list page on success
+                    const url = '/api/interview/';
+                    handleGetRequest(url);
+                } else if (result.message === 'failure') {
+                    // Display an error message if the deletion fails
+                    console.error('Error:', result.error || 'Failed to delete interview');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/';
+        }
+    });
+
+    // Handle the "Cancel" button click
+    document.getElementById('cancel-delete').addEventListener('click', function() {
+        const url = '/api/interview/';
+        handleGetRequest(url);
+    });
+</script>

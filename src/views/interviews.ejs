@@ -1,0 +1,128 @@
+<body>
+    <!-- Error div -->
+    <div class="error">
+        <% if (typeof error !== 'undefined' && error) { %>
+            <%= error %>
+        <% } %>
+    </div>
+
+    <!-- Title for Interviews List -->
+    <h2>Interviews</h2>
+
+    <!-- Interviews List -->
+    <ul id="interviews-list" class="interviews-list">
+        <% if (interviews.length > 0) { %>
+            <% interviews.forEach(interview => { %>
+                <li>
+                    <strong>Company:</strong> <%= interview.company %><br>
+                    <strong>Location:</strong> <%= interview.location %><br>
+                    <strong>Date:</strong> <%= interview.date %><br>
+                    <ul class="links-collection">
+                        <li><a href="#" class="add-student" data-id="<%= interview._id %>">Add Student</a></li>
+                        <li><a href="#" class="view-student" data-id="<%= interview._id %>">View Student</a></li>
+                        <li><a href="#" class="modify-interview" data-id="<%= interview._id %>">Modify Interview</a></li>
+                        <li><a href="#" class="delete-interview" data-id="<%= interview._id %>">Delete Interview</a></li>
+                    </ul>
+                </li>
+            <% }) %>
+        <% } else { %>
+            <li>No interviews available.</li>
+        <% } %>
+    </ul>
+
+    <!-- Add Interview Link -->
+    <a href="#" class="add-interview-link">Add Interview</a>
+</body>
+
+<script>
+    async function handleGetRequest(url) {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        // Change the URL to the provided URL
+                        history.pushState(null, null, url);
+                        
+
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // If the response is JSON, handle it accordingly
+                        const data = await response.json();
+                        console.log('JSON Response:', data);
+                        // Handle JSON response if needed
+                    }
+                } else {
+                    console.error('Failed to fetch the page:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    // Event listeners for the interview actions
+    document.querySelectorAll('.add-student').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+            
+            const interviewId = this.getAttribute('data-id');
+            const url = `/api/interview/addStudent/${interviewId}`;
+            handleGetRequest(url);
+        });
+    });
+
+    document.querySelectorAll('.view-student').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+            
+            const interviewId = this.getAttribute('data-id');
+            const url = `/api/interview/viewStudent/${interviewId}`;
+            handleGetRequest(url);
+        });
+    });
+
+    document.querySelectorAll('.modify-interview').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+            
+            const interviewId = this.getAttribute('data-id');
+            const url = `/api/interview/modify/${interviewId}`;
+            handleGetRequest(url);
+        });
+    });
+
+    document.querySelectorAll('.delete-interview').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+            
+            const interviewId = this.getAttribute('data-id');
+            const url = `/api/interview/delete/${interviewId}`;
+            handleGetRequest(url);
+        });
+    });
+
+    document.querySelector('.add-interview-link').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent the default link behavior
+        
+        const url = '/api/interview/add';
+        handleGetRequest(url);
+    });
+</script>

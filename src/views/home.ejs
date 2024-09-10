@@ -1,0 +1,16 @@
+<% if (typeof error !== 'undefined') { %>
+    <div class="error"><%= error %></div>
+<% } %>
+
+<div class="home">Welcome to the job page. Sign in for further use of above sections</div>
+
+<% if (typeof message !== 'undefined' && message.trim().length > 0) { %>
+    <div class="message"><%= message %></div>
+<% } %>
+
+<nav class="sign">
+    <a href="/api/users/signup">signup</a>
+    <a href="/api/users/signIn">signin</a>
+</nav>
+
+    

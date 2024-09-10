@@ -1,0 +1,137 @@
+<body>
+    <!-- Error div -->
+    <div class="error">
+        <% if (typeof error !== 'undefined' && error) { %>
+            <%= error %>
+        <% } %>
+    </div>
+
+    <!-- Form for Adding an Interview -->
+    <h2>Add Interview</h2>
+    <form id="add-interview-form" action="/api/interview/addStudent/<%= interviewID %>" method="POST">
+        <div>
+            <label for="student">Student:</label>
+            <select id="student" name="student" required>
+                <option value="" disabled selected>Select a student</option>
+                <% students.forEach(student => { %>
+                    <option value="<%= student._id %>"><%= student.name %></option>
+                <% }) %>
+            </select>
+        </div>
+        <div>
+            <label for="status">Status:</label>
+            <select id="status" name="status" required>
+                <option value="" disabled selected>Select a status</option>
+                <option value="pass">Pass</option>
+                <option value="failed">Failed</option>
+                <option value="on hold">On Hold</option>
+                <option value="didn't attempt">Didn't Attempt</option>
+                <option value="pending">Pending</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit">Submit</button>
+        </div>
+    </form>
+    <div>
+        <button type="button" id="go-back-button">Go Back</button>
+    </div>
+</body>
+
+<script>
+    async function handleGetRequest(url) {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        document.open();
+                        document.write(html);
+                        document.close();
+
+                        // Change the URL to the provided URL
+                        history.pushState(null, null, url);
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // If the response is JSON, handle it accordingly
+                        const data = await response.json();
+                        console.log('JSON Response:', data);
+                        // Handle JSON response if needed
+                    }
+                } else {
+                    console.error('Failed to fetch the page:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    document.getElementById('add-interview-form').onsubmit = async function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const formData = new FormData(this);
+
+                const studentID = formData.get('student');
+                const status = formData.get('status');
+                const interviewID = '<%= interviewID %>'; // Fetch the interviewID
+
+                const response = await fetch(`/api/interview/addStudent/${interviewID}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token, // Pass the token in the Authorization header
+                        'Content-Type': 'application/json' // Set the content type to JSON
+                    },
+                    body: JSON.stringify({ studentID, status })
+                });
+
+                const data = await response.json();
+                console.log(data);
+
+                const errorDiv = document.querySelector('.error');
+
+                if (data.message === 'success') {
+                    // Redirect to the interviews page if the interview is added successfully
+                    const url=`/api/interview/`;
+                    await handleGetRequest(url)
+                } else if (data.message === 'failure') {
+                    // Clear any existing error message
+                    errorDiv.innerHTML = '';
+                    // Append the new error message
+                    errorDiv.textContent = data.error || 'An error occurred.';
+                } else {
+                    throw new Error('Failed to add interview');
+                }
+            } catch (error) {
+                console.error('Error during form submission:', error);
+                // Handle error, e.g., display an error message in the .error div
+                document.querySelector('.error').textContent = 'Failed to add interview. Please try again.';
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    };
+    document.getElementById('go-back-button').onclick = function() {
+        const url=`/api/interview/`;
+        handleGetRequest(url);
+    };
+</script>

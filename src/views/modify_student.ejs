@@ -1,0 +1,146 @@
+<body>
+    
+    <div class="error-messages">
+        <% if (typeof errors !== 'undefined' && errors.length > 0) { %>
+        <ul>
+            <li><%= errors[0].msg %></li>
+        </ul>
+        <% } %>
+    </div>
+   
+    <h1>Modify Student</h1>
+    <form id="modify-student-form" action="/api/student/modify/<%= student._id %>" method="POST">
+        <div>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" value="<%= student.name %>" required>
+        </div>
+        <div>
+            <label for="batch">Batch:</label>
+            <input type="text" id="batch" name="batch" value="<%= student.batch %>" required>
+        </div>
+        <div>
+            <label for="college">College:</label>
+            <input type="text" id="college" name="college" value="<%= student.Student_details.college %>" required>
+        </div>
+        <div>
+            <label for="status">Status:</label>
+            <input type="text" id="status" name="status" value="<%= student.Student_details.status %>" required>
+        </div>
+        <div>
+            <label for="DSA">DSA Score:</label>
+            <input type="number" id="DSA" name="DSA" value="<%= student.Course_Scores.DSA %>" min="0" max="100">
+        </div>
+        <div>
+            <label for="Node">Node Score:</label>
+            <input type="number" id="Node" name="Node" value="<%= student.Course_Scores.Node %>" min="0" max="100">
+        </div>
+        <div>
+            <label for="React">React Score:</label>
+            <input type="number" id="React" name="React" value="<%= student.Course_Scores.React %>" min="0" max="100">
+        </div>
+        <div>
+            <button type="submit">Modify Student</button>
+            <a href="#" class="cancel-button">Cancel</a>
+        </div>
+    </form>
+</body>
+
+<script>
+    async function loadStudent() {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch('/api/student', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        document.open();
+                        document.write(html);
+                        document.close();
+
+                        // Change the URL to /api/student
+                        history.pushState(null, null, '/api/student');
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // If the response is JSON, handle it accordingly
+                        const data = await response.json();
+                        // Handle JSON response here, if needed
+                    }
+                } else {
+                    console.error('Failed to fetch students:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    // Call loadStudent function if cancel is clicked
+    document.querySelector('.cancel-button').onclick = function(event) {
+        event.preventDefault(); // Prevent the default link behavior
+        loadStudent(); // Call the loadStudent function
+    };
+
+    // Handle form submission for modifying the student
+    document.getElementById('modify-student-form').onsubmit = async function(event) {
+        event.preventDefault(); // Prevent the default form submission
+
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                // Manually create the body by getting values from the form elements
+                const name = document.getElementById('name').value;
+                const batch = document.getElementById('batch').value;
+                const college = document.getElementById('college').value;
+                const status = document.getElementById('status').value;
+                const DSA = document.getElementById('DSA').value;
+                const Node = document.getElementById('Node').value;
+                const React = document.getElementById('React').value;
+
+                const response = await fetch('<%= `/api/student/modify/${student._id}` %>', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token, // Pass the token in the Authorization header
+                        'Content-Type': 'application/json' // Set the content type to JSON
+                    },
+                    body: JSON.stringify({ name, batch, college, status, DSA, Node, React })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.message === 'success') {
+                        // If the student is modified successfully, reload the students list
+                        await loadStudent();
+                    } else {
+                        // If there's a failure, display the error message
+                        const errorMessagesDiv = document.querySelector('.error-messages');
+                        errorMessagesDiv.innerHTML = ''; // Clear existing error messages
+                        const errorItem = document.createElement('li');
+                        errorItem.textContent = data.error.msg;
+                        errorMessagesDiv.appendChild(errorItem);
+                    }
+                } else {
+                    console.error('Failed to submit the form:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during form submission:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    };
+</script>

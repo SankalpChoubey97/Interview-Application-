@@ -1,0 +1,57 @@
+<body>
+  <% if (typeof message !== 'undefined' && message != null && message.trim().length > 0) { %>
+    <div id="message">
+      <p><%= message %></p>
+    </div>
+  <% } %>
+
+  <nav>
+    <form action="/api/jobs" method="GET" id="job-search-form">
+      <div id="location-field">
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" required>
+      </div>
+      <div id="role-field">
+        <label for="role">Role:</label>
+        <input type="text" id="role" name="role" required>
+      </div>
+      <div id="search-button">
+        <button type="submit">Search Jobs</button>
+      </div>
+    </form>
+  </nav>
+
+  <% if (typeof jobs !== 'undefined' && jobs.length > 0) { %>
+    <div id="job-listings">
+      <h1>Job Listings</h1>
+      <ul>
+        <% jobs.forEach(function(job) { %>
+          <li class="job-item">
+            <strong>Company:</strong> <%= job.company.display_name %><br>
+            <strong>Location:</strong> <%= job.location.display_name %><br>
+            <strong>Title:</strong> <%= job.title %><br>
+            <strong>Link:</strong> <a href="<%= job.redirect_url %>"><%= job.redirect_url %></a>
+          </li>
+          <br>
+        <% }); %>
+      </ul>
+    </div>
+  <% } %>
+</body>
+
+
+<script>
+  // Check if a token is passed (e.g., from a server response or a form submission)
+  const token = "<%= typeof token !== 'undefined' ? token : '' %>";
+
+  // If a token is available, store it in the local storage
+  if (token && token.trim().length > 0) {
+      localStorage.setItem('authToken', token);
+      console.log('Token saved to local storage');
+  } else {
+      console.log('No token provided');
+  }
+</script>
+
+
+

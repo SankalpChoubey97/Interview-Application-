@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Custom styles for the navigation bar */
+        .navbar-custom {
+            margin-bottom: 20px;
+        }
+        .navbar-custom .nav-link {
+            color: #fff;
+        }
+        .navbar-custom .btn {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark navbar-custom">
+        <a class="navbar-brand" href="/api/">Login</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/api/jobs">Jobs Available</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="students-link">Students</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="interview-link">Interviews</a>
+                </li>
+            </ul>
+            <button class="btn btn-primary ml-auto" id="download-button">Download CSV</button>
+        </div>
+    </nav>
+    
+    <div id="content" class="container">
+        <%- body %>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        async function handleGetRequest(url, historyUrl) {
+            const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+            if (token) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': token // Pass the token in the Authorization header
+                        }
+                    });
+
+                    const contentType = response.headers.get('Content-Type');
+
+                    if (response.ok) {
+                        if (contentType && contentType.includes('text/html')) {
+                            // If the response is HTML, replace the entire document content with the response HTML
+                            const html = await response.text();
+                            document.open();
+                            document.write(html);
+                            document.close();
+
+                            // Change the URL in the browser history
+                            history.pushState(null, null, historyUrl);
+                        } else if (contentType && contentType.includes('application/json')) {
+                            // If the response is JSON, handle it accordingly
+                            const data = await response.json();
+                            // Handle JSON response here, if needed
+                        }
+                    } else {
+                        console.error(`Failed to fetch content from ${url}:`, response.statusText);
+                    }
+                } catch (error) {
+                    console.error('Error during fetch:', error);
+                }
+            } else {
+                alert('Please signup or signin');
+                window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+            }
+        }
+
+        // Attach event handlers to the links
+        document.getElementById('students-link').onclick = function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+            handleGetRequest('/api/student', '/api/student'); // Call the helper function with the specific URLs
+        };
+
+        document.getElementById('interview-link').onclick = function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+            handleGetRequest('/api/interview', '/api/interview'); // Call the helper function with the specific URLs
+        };
+
+        document.getElementById('download-button').addEventListener('click', async () => {
+            try {
+                // Retrieve the token from local storage
+                const token = localStorage.getItem('authToken');
+
+                if (!token) {
+                    // No token found, alert the user and redirect to the signup/signin page
+                    alert('Please signup or signin');
+                    window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+                    return; // Exit the function
+                }
+
+                // Make the GET request to download the CSV or HTML
+                const response = await fetch('http://localhost:3200/api/download', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (contentType.includes('text/html')) {
+                    // If the response is HTML, handle it by redirecting or displaying it
+                    const html = await response.text();
+                    document.open();
+                    document.write(html);
+                    document.close();
+                } else if (contentType.includes('text/csv')) {
+                    // If the response is CSV, handle it by creating a download link
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'students.csv'; // The name of the file to be downloaded
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url); // Clean up after download
+                } else {
+                    throw new Error('Unsupported Content-Type: ' + contentType);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+    </script>
+</body>
+</html>

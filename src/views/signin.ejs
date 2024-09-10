@@ -1,0 +1,75 @@
+
+  <div class="message"></div>
+
+<% if (typeof error !== 'undefined') { %>
+  <div class="error"><%= error %></div>
+<% } %>
+
+<form id="signin-form">
+  <div>
+    <label for="emp_id">Employee ID:</label>
+    <input type="number" id="emp_id" name="emp_id" required>
+  </div>
+  <div>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" required>
+  </div>
+  <button type="submit">Sign In</button>
+</form>
+
+<nav class="sign">
+  <a href="/api/users/signup">Signup</a>
+</nav>
+
+<script>
+  document.getElementById('signin-form').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const emp_id = document.getElementById('emp_id').value;
+    const password = document.getElementById('password').value;
+
+    try {
+      const response = await fetch('/api/users/signIn', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ emp_id, password })
+      });
+
+      const data = await response.json();
+      console.log(data);
+
+      if (response.ok) {
+        // Handle success - redirect or store token
+        if (data.message === 'success') {
+          localStorage.setItem('authToken', data.token);
+          console.log('Sign in successful. Redirecting to jobs page.');
+          window.location.href = '/api/jobs?message=Sign in successful';
+        } else if (data.message === 'Invalid user') {
+            window.location.href = '/api/?error=Please signup as this user doesn\'t exist';
+        } else if (data.message === 'Incorrect credentials') {
+          // Clear and update error message div
+            const errorDiv = document.querySelector('.message');
+            if (errorDiv) {
+              errorDiv.textContent = 'Incorrect credentials';
+            }
+        }
+      } else {
+        // Handle non-ok responses
+        const errorDiv = document.querySelector('.message');
+        if (errorDiv) {
+          errorDiv.textContent = 'An unexpected error occurred.';
+        }
+        console.log('Response not OK:', data);
+      }
+    } catch (error) {
+      console.log('Request failed:', error);
+      const errorDiv = document.querySelector('.message');
+      if (errorDiv) {
+        errorDiv.textContent = 'Request failed: ' + error.message;
+      }
+    }
+  });
+</script>
+

@@ -1,0 +1,124 @@
+<body>
+    <!-- Error div -->
+    <div id="error-message" class="error">
+        <% if (typeof error !== 'undefined' && error) { %>
+            <%= error %>
+        <% } %>
+    </div>
+
+    <% if (typeof interview !== 'undefined' && interview) { %>
+        <!-- Interview details -->
+        <% if (interview.company && interview.location && interview.date) { %>
+            <div id="interview-details" class="interview-info">
+                <h2>Company: <%= interview.company %></h2>
+                <p>Location: <%= interview.location %></p>
+                <p>Date: <%= interview.date %></p>
+            </div>
+        <% } %>
+
+        <!-- Students list -->
+        <% if (Array.isArray(interview.students) && interview.students.length > 0) { %>
+            <div id="students-list" class="students-info">
+                <h3>Students:</h3>
+                <ul>
+                    <% interview.students.forEach(function(student) { %>
+                        <% if (student.name && student.batch && student.status && student.studentID) { %>
+                            <li>
+                                <p>Name: <%= student.name %></p>
+                                <p>Batch: <%= student.batch %></p>
+                                <p>Status: <%= student.status %></p>
+                                <a href="http://localhost:3200/api/interview/viewStudent/<%= interview._id %>/modifyStudent/<%= student.studentID %>" class="modify-student-link">Modify Student</a>
+                                <a href="http://localhost:3200/api/interview/viewStudent/<%= interview._id %>/deleteStudent/<%= student.studentID %>" class="delete-student-link">Delete Student</a>
+                            </li>
+                        <% } %>
+                    <% }) %>
+                </ul>
+            </div>
+        <% } %>
+        
+        <!-- Add student link -->
+        <% if (interview._id) { %>
+            <div id="add-student" class="add-student-link">
+                <a href="/api/interview/addStudent/<%= interview._id %>">Add Student</a>
+            </div>
+        <% } %>
+    <% } %>
+
+    <div>
+        <button type="button" id="go-back-button">Go Back</button>
+    </div>
+</body>
+<script>
+    async function handleGetRequest(url) {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        document.open();
+                        document.write(html);
+                        document.close();
+
+                        // Change the URL to the provided URL
+                        history.pushState(null, null, url);
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // If the response is JSON, handle it accordingly
+                        const data = await response.json();
+                        console.log('JSON Response:', data);
+                        // Handle JSON response if needed
+                    }
+                } else {
+                    console.error('Failed to fetch the page:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    // Event listeners for the interview actions
+    document.querySelectorAll('.modify-student-link').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+
+            const url = this.href;
+            handleGetRequest(url);
+        });
+    });
+
+    document.querySelectorAll('.delete-student-link').forEach(link => {
+        link.addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent the default link behavior
+
+            const url = this.href;
+            handleGetRequest(url);
+        });
+    });
+
+    document.querySelector('.add-student-link a').addEventListener('click', function(event) {
+        event.preventDefault(); // Prevent the default link behavior
+
+        const url = this.href;
+        handleGetRequest(url);
+    });
+
+    document.getElementById('go-back-button').onclick = function() {
+        const url = `/api/interview/`;
+        handleGetRequest(url);
+    };
+</script>

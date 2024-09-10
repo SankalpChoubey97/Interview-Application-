@@ -1,0 +1,122 @@
+<body>
+    <div class="error">
+        <% if (typeof error !== 'undefined' && error) { %>
+            <%= error %>
+        <% } %>
+    </div>
+    
+    <div class="interview-form">
+        <h2>Modify Interview</h2>
+    
+        <!-- Display the company name -->
+        <p>Company: <%= interview.company %></p>
+    
+        <!-- Form for modifying location and date -->
+        <form id="modify-interview-form">
+            <label for="location">Location:</label>
+            <input type="text" id="location" name="location" value="<%= interview.location %>" required>
+    
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" value="<%= interview.date %>" required>
+    
+            <button type="button" id="submit-btn">Submit</button>
+        </form>
+        <div>
+            <button type="button" id="go-back-button">Go Back</button>
+        </div>
+    </div>
+</body>
+
+
+<script>
+    // Function to handle GET requests, similar to the previous implementation
+    async function handleGetRequest(url) {
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+
+        if (token) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': token // Pass the token in the Authorization header
+                    }
+                });
+
+                const contentType = response.headers.get('Content-Type');
+
+                if (response.ok) {
+                    if (contentType && contentType.includes('text/html')) {
+                        // If the response is HTML, replace the entire document content with the response HTML
+                        const html = await response.text();
+                        // Change the URL to the provided URL
+                        history.pushState(null, null, url);
+
+                        document.open();
+                        document.write(html);
+                        document.close();
+                    } else if (contentType && contentType.includes('application/json')) {
+                        // If the response is JSON, handle it accordingly
+                        const data = await response.json();
+                        console.log('JSON Response:', data);
+                    }
+                } else {
+                    console.error('Failed to fetch the page:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    }
+
+    // Handle the "Submit" button click
+    document.getElementById('submit-btn').addEventListener('click', async function() {
+        const location = document.getElementById('location').value;
+        const date = document.getElementById('date').value;
+        const interviewId = '<%= interview._id %>';  // Pass interview ID from EJS
+        const token = localStorage.getItem('authToken'); // Fetch the token from local storage
+        console.log(token);
+
+        if (token) {
+            try {
+                const response = await fetch(`http://localhost:3200/api/interview/modify/${interviewId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token, // Pass the token in the Authorization header
+                        'Content-Type': 'application/json' // Set the content type to JSON
+                    },
+                    body: JSON.stringify({ location: location, date: date })
+                });
+
+                const result = await response.json();
+                const errorDiv = document.querySelector('.error');
+
+                if (result.message === 'success') {
+                    // Redirect to the interview list page on success
+                    const url= 'http://localhost:3200/api/interview/';
+                    handleGetRequest(url);
+                } else if (result.message === 'failure') {
+                    // Display the error message
+                    errorDiv.innerHTML = '';
+                    errorDiv.textContent = result.error || 'An error occurred.';
+                } else {
+                    throw new Error('Failed to modify interview');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.querySelector('.error').innerText = 'An error occurred while processing your request.';
+            }
+        } else {
+            alert('Please signup or signin');
+            window.location.href = 'http://localhost:3200/api/'; // Redirect to the signup/signin page
+        }
+    });
+
+    // Handle the "Go Back" button click
+    document.getElementById('go-back-button').addEventListener('click', function() {
+        const url = `/api/interview/`;
+        handleGetRequest(url);
+    });
+</script>
